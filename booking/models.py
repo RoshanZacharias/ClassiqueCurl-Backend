@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin, Group, Permission
 from django.db import models
+from salon.models import Service, Stylist, TimeSlot, HairSalon
 
 # Create your models here.
 
@@ -50,3 +51,22 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
 
 
+
+
+class Appointment(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    user_name = models.CharField(max_length=100, null=True)
+    user_email = models.CharField(max_length=100, null=True)
+    salon = models.ForeignKey(HairSalon, on_delete=models.CASCADE, null=True)
+    salon_name = models.CharField(max_length=100, null=True)
+    service = models.ForeignKey(Service, on_delete=models.CASCADE)
+    stylist = models.ForeignKey(Stylist, on_delete=models.CASCADE)
+    date = models.DateField()
+    time_slot = models.ForeignKey(TimeSlot, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_booked = models.BooleanField(default=False)
+
+
+    def __str__(self):
+        return f"{self.user} - {self.service} - {self.date}"
+    

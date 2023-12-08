@@ -50,8 +50,8 @@ INSTALLED_APPS = [
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-        'booking.authenticate.CustomAuthentication',
-        'salon.authenticate.CustomAuthentication',
+        
+        
     ],
 }
 

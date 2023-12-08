@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import HairSalon
+from .models import HairSalon, Service, Stylist, TimeSlot
 
 
 
@@ -12,3 +12,74 @@ class HairSalonRegistrationSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         user = HairSalon.objects.create_user(**validated_data)
         return user
+    
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+    salon_id = serializers.IntegerField(write_only=True, required=False)
+
+    class Meta:
+        model = Service
+        fields = ['id', 'service_name', 'description', 'price', 'salon_id', 'salon']
+        read_only_fields = ['salon']
+
+    def create(self, validated_data):
+        # Pop salon_id from validated_data and associate the service with the salon
+        salon_id = validated_data.pop('salon_id', None)
+        if salon_id:
+            try:
+                salon = HairSalon.objects.get(id=salon_id)
+                validated_data['salon'] = salon
+            except HairSalon.DoesNotExist:
+                raise serializers.ValidationError({'salon_id': 'Salon not found.'})
+
+        return super().create(validated_data)
+
+
+
+
+class StylistSerializer(serializers.ModelSerializer):
+    salon_id = serializers.IntegerField(write_only=True, required=False)
+
+    class Meta:
+        model = Stylist
+        fields = ['id', 'stylist_name', 'stylist_image', 'salon_id', 'salon']
+        read_only_fields = ['salon']
+
+    def create(self, validated_data):
+        # Pop salon_id from validated_data and associate the service with the salon
+        salon_id = validated_data.pop('salon_id', None)
+        if salon_id:
+            try:
+                salon = HairSalon.objects.get(id=salon_id)
+                validated_data['salon'] = salon
+            except HairSalon.DoesNotExist:
+                raise serializers.ValidationError({'salon_id': 'Salon not found.'})
+
+        return super().create(validated_data)
+
+
+
+
+
+
+
+class TimeSlotSerializer(serializers.ModelSerializer):
+    salon_id = serializers.IntegerField(write_only=True, required=False)
+
+    class Meta:
+        model = TimeSlot
+        fields = ['id', 'day', 'start_time', 'end_time', 'salon_id', 'salon']
+
+    def create(self, validated_data):
+        # Pop salon_id from validated_data and associate the service with the salon
+        salon_id = validated_data.pop('salon_id', None)
+        if salon_id:
+            try:
+                salon = HairSalon.objects.get(id=salon_id)
+                validated_data['salon'] = salon
+            except HairSalon.DoesNotExist:
+                raise serializers.ValidationError({'salon_id': 'Salon not found.'})
+
+        return super().create(validated_data)
+        

@@ -1,9 +1,11 @@
 from django.shortcuts import render
-from .models import HairSalon
+from .models import HairSalon, Service, Stylist
+from booking.models import Appointment
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import HairSalonRegistrationSerializer
+from .serializers import HairSalonRegistrationSerializer, ServiceSerializer, StylistSerializer, TimeSlotSerializer, TimeSlot
+from booking.serializers import AppointmentSerializer
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from django.contrib.auth.backends import BaseBackend
@@ -11,6 +13,10 @@ from booking.models import CustomUser
 from django.contrib.auth.hashers import check_password
 from django.conf import settings
 from django.middleware import csrf
+import time
+from django.http import JsonResponse
+from rest_framework import generics
+
 # Create your views here.
 
 
@@ -58,6 +64,14 @@ class SalonLoginView(APIView):
 
             if salon is not None and check_password(password, salon.password) and salon.is_verified:
                 data = get_tokens_for_user(salon)
+                response = JsonResponse({
+                    "data": data,
+                    "salon": {
+                        "id": salon.id,
+                        "username": salon.email,
+                        "name": salon.salon_name,
+                    }
+                })
                 response.set_cookie(
                     key = settings.SIMPLE_JWT['AUTH_COOKIE'],
                     value = data["access"],
@@ -95,6 +109,7 @@ class SalonLogin(APIView):
         if salon is not None:
             if salon.is_active:
                 data = get_tokens_for_user(salon)
+                
                 response.set_cookie(
                     key = settings.SIMPLE_JWT['AUTH_COOKIE'],
                     value = data["access"],
@@ -110,3 +125,111 @@ class SalonLogin(APIView):
                 return Response({"No active" : "This account is not active!!"}, status=status.HTTP_404_NOT_FOUND)
         else:
             return Response({"Invalid" : "Invalid username or password!!"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+
+class AddServiceView(APIView):
+    def post(self, request, *args, **kwargs):
+        # Extract salon_id from the request data
+        salon_id = request.data.get('salon_id')
+
+        # Ensure that the salon_id is valid
+        try:
+            salon = HairSalon.objects.get(id=salon_id)
+            print('****salon****', salon)
+        except HairSalon.DoesNotExist:
+            return Response({'error': 'Salon not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Associate the service with the salon
+        request.data['salon'] = salon.id
+
+        serializer = ServiceSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class AddStylistView(APIView):
+    def post(self, request):
+        salon_id = request.data.get('salon_id')
+        try:
+            salon = HairSalon.objects.get(id=salon_id)
+            print('***Salon***', salon)
+        except HairSalon.DoesNotExist:
+            return Response({'error': 'Salon not found'}, status=status.HTTP_404_NOT_FOUND)
+        request.data['salon'] = salon.id
+
+        serializer = StylistSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        
+
+
+class SalonServicesView(APIView):
+    def get(self, request):
+        salon_id = request.query_params.get('salon_id', None)
+        print(salon_id)
+        salon = HairSalon.objects.get(id=salon_id)
+        services = Service.objects.filter(salon=salon)
+        serializer = ServiceSerializer(services, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+
+
+
+class SalonStylistView(APIView):
+    def get(self, request):
+        salon_id = request.query_params.get('salon_id', None)
+        print(salon_id)
+        salon = HairSalon.objects.get(id=salon_id)
+        stylist = Stylist.objects.filter(salon=salon)
+        serializer = StylistSerializer(stylist, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+
+
+class AddTimeSlotView(APIView):
+    def post(self, request, *args, **kwargs):
+        salon_id = request.data.get('salon_id')
+        try:
+            salon = HairSalon.objects.get(id=salon_id)
+            print('***Salon***', salon)
+        except HairSalon.DoesNotExist:
+            return Response({'error': 'Salon not found'}, status=status.HTTP_404_NOT_FOUND)
+        request.data['salon'] = salon.id
+
+
+        serializer = TimeSlotSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class TimeSlotView(APIView):
+    def get(self, request):
+        salon_id = request.query_params.get('salon_id', None)
+        print(salon_id)
+        salon = HairSalon.objects.get(id=salon_id)
+        time_slots = TimeSlot.objects.filter(salon=salon)
+        data = [{'day': slot.day, 'start_time': slot.start_time, 'end_time': slot.end_time} for slot in time_slots]
+        return JsonResponse(data, safe=False)
+
+
+class BookedAppointmentsView(APIView):
+    def get(self, request, *args, **kwargs):
+        salon_id = self.kwargs.get('salonId')
+        bookings = Appointment.objects.filter(salon_id=salon_id, is_booked=True)
+        serializer = AppointmentSerializer(bookings, many=True)
+        return Response(serializer.data)
+    
