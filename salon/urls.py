@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SalonRegistrationView,SalonLoginView, SalonLogin, AddServiceView, SalonServicesView, AddStylistView, SalonStylistView, AddTimeSlotView, TimeSlotView, BookedAppointmentsView
+from .views import SalonRegistrationView,SalonLoginView, SalonLogin, AddServiceView, SalonServicesView, AddStylistView, SalonStylistView, AddTimeSlotView, TimeSlotView, BookedAppointmentsView, OrderStatusUpdateView
 
 
 
@@ -13,6 +13,7 @@ urlpatterns = [
     path('add-timeslot/', AddTimeSlotView.as_view(), name='add-timeslot'),
     path('salon-time-slot/', TimeSlotView.as_view(), name='time-slot'),
     path('booked-appointments/<int:salonId>/', BookedAppointmentsView.as_view(), name='booked-appointments'),
+    path('order/update-status/<int:pk>/', OrderStatusUpdateView.as_view(), name='order-status-update'),
 ]
     
 

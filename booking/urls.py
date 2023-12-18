@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import UserRegistrationView, CustomTokenObtainPairView, UserLoginView, LoginView, LogoutView, GoogleAuthLogin, SalonDetailsView, ServiceListView, StylistListView, TimeSlotListView, AppointmentCreateView, BookingOverviewAPIView, UpdateBookingStatusView, UserBookingsView, BookingCancellationView
+from .views import *
 
 
 
@@ -17,5 +17,9 @@ urlpatterns = [
     path('booking-overview/<int:pk>/', BookingOverviewAPIView.as_view(), name='booking-overview'),
     path('appointments/update-booking-status/', UpdateBookingStatusView.as_view(), name='update-booking-status'),
     path('bookings/<int:userId>/', UserBookingsView.as_view(), name='user-bookings'),
-    path('appointments/update-booking-status/<int:appointmentId>/', BookingCancellationView.as_view(), name='update-booking-status'),
+    path('orders/cancel/<int:orderId>/', OrderCancellationView.as_view(), name='order-cancellation'),
+    path('orders/reimbursed-amount/<int:orderId>/', ReimbursedAmountView.as_view(), name='reimbursed-amount'),
+    path('orders/reimbursed-sum/', ReimbursedSumView.as_view(), name='reimbursed-sum'),
+    path('pay/<int:id>/', start_payment.as_view(), name="payment"),
+    path('payment/success/', handle_payment_success.as_view(), name="payment_success"),
 ]

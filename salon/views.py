@@ -1,11 +1,11 @@
 from django.shortcuts import render
 from .models import HairSalon, Service, Stylist
-from booking.models import Appointment
+from booking.models import Appointment, Order
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import HairSalonRegistrationSerializer, ServiceSerializer, StylistSerializer, TimeSlotSerializer, TimeSlot
-from booking.serializers import AppointmentSerializer
+from booking.serializers import AppointmentSerializer, OrderSerializer
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from django.contrib.auth.backends import BaseBackend
@@ -229,7 +229,21 @@ class TimeSlotView(APIView):
 class BookedAppointmentsView(APIView):
     def get(self, request, *args, **kwargs):
         salon_id = self.kwargs.get('salonId')
-        bookings = Appointment.objects.filter(salon_id=salon_id, is_booked=True)
-        serializer = AppointmentSerializer(bookings, many=True)
-        return Response(serializer.data)
+        bookings = Order.objects.filter(salon_id=salon_id)
+        print(f"Salon ID: {salon_id}")
+        print(f"Number of Booked Appointments: {bookings.count()}")
+        serializer = OrderSerializer(bookings, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
     
+
+
+class OrderStatusUpdateView(generics.UpdateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        new_status = request.data.get('status')
+        instance.status = new_status
+        instance.save()
+        return Response({'message': 'Order status updated successfully'})

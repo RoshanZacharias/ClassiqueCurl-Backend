@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Appointment
+from .models import CustomUser, Appointment, Order
 from salon.models import Service, Stylist, TimeSlot
 from salon.serializers import ServiceSerializer, StylistSerializer, TimeSlotSerializer
 
@@ -72,3 +72,18 @@ class AppointmentSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
 
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    order_date = serializers.DateTimeField(format="%d %B %Y %I:%M %p")
+
+    class Meta:
+        model = Order
+        fields = '__all__'
+        depth = 2
+
+
+
+
+class ReimbursedSumSerializer(serializers.Serializer):
+    sum_reimbursed_amount = serializers.DecimalField(max_digits=10, decimal_places=2)

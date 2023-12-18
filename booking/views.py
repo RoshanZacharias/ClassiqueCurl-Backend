@@ -2,9 +2,9 @@ from django.shortcuts import render
 from rest_framework import generics, permissions, status
 # from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import CustomUser, Appointment
+from .models import CustomUser, Appointment, Order, ReimbursedAmount
 from salon.models import HairSalon, Service, Stylist, TimeSlot
-from .serializers import UserRegistrationSerializer, GoogleUserSerializer, AppointmentSerializer
+from .serializers import UserRegistrationSerializer, GoogleUserSerializer, AppointmentSerializer, OrderSerializer, ReimbursedSumSerializer
 from salon.serializers import HairSalonRegistrationSerializer, ServiceSerializer, StylistSerializer, TimeSlotSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework.permissions import AllowAny
@@ -16,6 +16,13 @@ from django.http import JsonResponse
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+import environ
+import razorpay
+import json
+from rest_framework.decorators import api_view
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Sum
+
 
 
 
@@ -306,18 +313,230 @@ class UpdateBookingStatusView(APIView):
 class UserBookingsView(APIView):
     def get(self, request, *args, **kwargs):
         user_id = self.kwargs.get('userId')
-        bookings = Appointment.objects.filter(user_id=user_id, is_booked=True)
-        serializer = AppointmentSerializer(bookings, many=True)
+        orders = Order.objects.filter(user_id=user_id)  
+        serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
 
-class BookingCancellationView(APIView):
-        def patch(self, request, appointmentId, *args, **kwargs):
-            try:
-                appointment = Appointment.objects.get(id=appointmentId)
-                appointment.is_booked = False
-                appointment.save()
-                return Response({'message': 'Booking canceled successfully'}, status=status.HTTP_200_OK)
-            except Appointment.DoesNotExist:
-                return Response({'error': 'Appointment not found'}, status=status.HTTP_404_NOT_FOUND)
+class OrderCancellationView(APIView):
+    def patch(self, request, orderId, *args, **kwargs):
+        try:
+            order = Order.objects.get(id=orderId)
+            if order.isPaid and order.status == 'Pending':
+                reimbursed_amount = order.order_amount - order.convenience_fee
+                print('reimbursed_amount:', reimbursed_amount)
+                ReimbursedAmount.objects.create(user=order.user, order=order, amount=reimbursed_amount)
+                order.status = 'Cancelled'
+                order.save()
+                return Response({'message': 'Order canceled successfully'}, status=status.HTTP_200_OK)
+            else:
+                return Response({'error': 'Order cannot be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+            
+
+class ReimbursedAmountView(APIView):
+    def get(self, request, orderId, *args, **kwargs):
+        try:
+            order = Order.objects.get(id=orderId)
+            return Response({'reimbursed_amount': order.reimbursed_amount}, status=status.HTTP_200_OK)
+        except Order.DoesNotExist:
+            return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class ReimbursedSumView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        user = self.request.user
+        sum_reimbursed_amount = ReimbursedAmount.objects.filter(user=user).aggregate(Sum('amount'))['amount__sum'] or 0
+        return Response({'sum_reimbursed_amount': sum_reimbursed_amount}, status=status.HTTP_200_OK)
+
+
+env = environ.Env()
+environ.Env.read_env()
+
+class start_payment(APIView):
+    def post(self,request,id):
+        print("***REQUEST DATA***", request.data)
+        service_name = request.data['service_name']
+        stylist_name = request.data['stylist_name']
+        amount = request.data['amount']
+        user_id = request.data['user']
+        user_name = request.data['user_name']
+        user_email = request.data['user_email']
+        salon_id = request.data['salon']
+        salon_name = request.data['salon_name']
+        time_slot_date = request.data['time_slot_date']
+        time_slot_day = request.data['time_slot_day']
+        time_slot_start_time = request.data['time_slot_start_time']
+        time_slot_end_time = request.data['time_slot_end_time']
+
+        user = get_object_or_404(CustomUser, id=user_id)
+        salon = get_object_or_404(HairSalon,id=salon_id)
+
+
+        client = razorpay.Client(auth=(env('PUBLIC_KEY'), env('SECRET_KEY')))
+
+        payment = client.order.create({
+        "amount": int(float(amount) * 100),  
+        "currency": "INR",
+        "payment_capture": "1"
+         })
+        try:
+            # Create an Order object in the database
+            order = Order.objects.create(
+                order_service=service_name,
+                order_stylist=stylist_name,
+                order_amount=amount,
+                order_payment_id=payment['id'],
+                user= user,
+                user_name=user_name,
+                user_email=user_email,
+                salon=salon,
+                salon_name=salon_name,
+                time_slot_date=time_slot_date,
+                time_slot_day=time_slot_day,
+                time_slot_start_time=time_slot_start_time,
+                time_slot_end_time=time_slot_end_time
+            )
+            
+            print('***order***', order)
+
+            serializer = OrderSerializer(order)
+            print('***serializer data***', serializer.data)
+
+            data = {
+                "payment": payment,
+                "order": serializer.data
+            }
+            print('***data***', data)
+            
+            return Response(data)
+        except ObjectDoesNotExist as e:
+            return JsonResponse({'error': 'Object does not exist'}, status=404)
+        except Exception as e:
+            # Log the error for debugging
+            print(f"Error during payment processing: {str(e)}")
+            return JsonResponse({'error': 'Internal Server Error'}, status=500)
+
+
+
+
+
+class handle_payment_success(APIView):
+    def post(self, request):
+        print('*********handle_payment_success************')
+        # request.data is coming from frontend
+        res = json.loads(request.data["response"])
+        print('***res***', res)
+
+        
+
+        ord_id = ""
+        raz_pay_id = ""
+        raz_signature = ""
+
+        # res.keys() will give us list of keys in res
+        for key in res.keys():
+            if key == 'razorpay_order_id':
+                ord_id = res[key]
+            elif key == 'razorpay_payment_id':
+                raz_pay_id = res[key]
+            elif key == 'razorpay_signature':
+                raz_signature = res[key]
+
+
+        print('Order Payment ID:', ord_id)
+
+        # get order by payment_id which we've created earlier with isPaid=False
+        order = Order.objects.get(order_payment_id=ord_id)
+        print('***order***', order)
+
+        # we will pass this whole data in razorpay client to verify the payment
+        data = {
+            'razorpay_order_id': ord_id,
+            'razorpay_payment_id': raz_pay_id,
+            'razorpay_signature': raz_signature
+        }
+
+        client = razorpay.Client(auth=(env('PUBLIC_KEY'), env('SECRET_KEY')))
+
+        # checking if the transaction is valid or not by passing above data dictionary in 
+        # razorpay client if it is "valid" then check will return None
+        check = client.utility.verify_payment_signature(data)
+        print('***CHECK***', check)
+
+        if check is  None:
+            print("Redirect to error url or error page")
+            return Response({'error': 'Something went wrong'})
+
+        # if payment is successful that means check is None then we will turn isPaid=True
+        order.isPaid = True
+        order.save()
+
+        res_data = {
+            'message': 'payment successfully received!'
+        }
+
+        return Response(res_data)
+
+
+
+# @api_view(['POST'])
+# def start_payment(request):
+#     try:
+#         # request.data is coming from frontend
+#         amount = request.data['amount']
+#         print('****AMOUNT****', amount)
+#         service_name = request.data['service_name']
+#         print('****SERVICE_NAME****', service_name)
+#         stylist_name = request.data['stylist_name']
+#         print('****STYLIST_NAME****', stylist_name)
+#         print("**************")
+
+#         # setup razorpay client this is the client to whome user is paying money that's you
+#         client = razorpay.Client(auth=(env('PUBLIC_KEY'), env('SECRET_KEY')))
+#         print('***CLIENT***', client)
+
+#         # create razorpay order
+#         # the amount will come in 'paise' that means if we pass 50 amount will become
+#         # 0.5 rupees that means 50 paise so we have to convert it in rupees. So, we will 
+#         # mumtiply it by 100 so it will be 50 rupees.
+#         payment = client.order.create({"amount": int(amount) * 100, 
+#                                     "currency": "INR", 
+#                                     "payment_capture": "1"})
+#         print("***PAYMENT***", payment)
+
+#         # we are saving an order with isPaid=False because we've just initialized the order
+#         # we haven't received the money we will handle the payment succes in next 
+#         # function
+#         order = Order.objects.create(order_service=service_name,
+#                                     order_stylist=stylist_name,
+#                                     order_amount=amount, 
+#                                     order_payment_id=payment['id'])
+#         print('***order***', order)
+
+#         serializer = OrderSerializer(order)
+#         print('***serailzier***', serializer.data)
+
+       
+
+#         data = {
+#             "payment": payment,
+#             "order": serializer.data
+#         }
+#         print('***data***', data)
+#         return Response(data)
+#     except ObjectDoesNotExist as e:
+#         return JsonResponse({'error': 'Object does not exist'}, status=404)
+#     except Exception as e:
+#         # Log the error for debugging
+#         print(f"Error during payment processing: {str(e)}")
+#         return JsonResponse({'error': 'Internal Server Error'}, status=500)
+
+
+
+
+
