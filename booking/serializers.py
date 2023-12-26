@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Appointment, Order
+from .models import CustomUser, Appointment, Order, Wallet
 from salon.models import Service, Stylist, TimeSlot
 from salon.serializers import ServiceSerializer, StylistSerializer, TimeSlotSerializer
 
@@ -87,3 +87,9 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class ReimbursedSumSerializer(serializers.Serializer):
     sum_reimbursed_amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class WalletSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wallet
+        fields = '__all__'

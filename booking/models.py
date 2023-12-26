@@ -73,6 +73,11 @@ class Appointment(models.Model):
         return f"{self.user} - {self.service} - {self.date}"
     
 
+class Wallet(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+
 
 
 
@@ -109,10 +114,9 @@ class Order(models.Model):
 
 
 class ReimbursedAmount(models.Model):
-    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
-    timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user} - {self.order} - ₹{self.amount}"

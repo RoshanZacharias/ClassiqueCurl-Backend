@@ -2,12 +2,12 @@ from django.shortcuts import render
 from rest_framework import generics, permissions, status
 # from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import CustomUser, Appointment, Order, ReimbursedAmount
+from .models import CustomUser, Appointment, Order, ReimbursedAmount, Wallet
 from salon.models import HairSalon, Service, Stylist, TimeSlot
-from .serializers import UserRegistrationSerializer, GoogleUserSerializer, AppointmentSerializer, OrderSerializer, ReimbursedSumSerializer
+from .serializers import UserRegistrationSerializer, GoogleUserSerializer, AppointmentSerializer, OrderSerializer, WalletSerializer
 from salon.serializers import HairSalonRegistrationSerializer, ServiceSerializer, StylistSerializer, TimeSlotSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView,Response
 from django.contrib.auth import get_user_model, authenticate
 from django.conf import settings
@@ -22,7 +22,13 @@ import json
 from rest_framework.decorators import api_view
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Sum
+from datetime import datetime
+from decimal import Decimal
+from django.db import transaction 
+from rest_framework.generics import RetrieveAPIView
 
+
+from .serializers import WalletSerializer
 
 
 
@@ -278,13 +284,23 @@ class TimeSlotListView(APIView):
 class AppointmentCreateView(APIView):
     def post(self, request, *args, **kwargs):
         print(request.data)
+        selected_date = request.data.get('date')
+        print('selected_date:', selected_date)
+        selected_time_slot_str = request.data.get('time_slot')['start_time']
+        selected_time_slot = datetime.strptime(selected_time_slot_str, '%H:%M:%S').time()
+        print('selected_time_slot:', selected_time_slot)
+
+        if Appointment.objects.filter(date=selected_date, time_slot__start_time=selected_time_slot).exists():
+            print('***Time slot already booked***')
+            return Response({'error': 'This time slot is already booked'}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = AppointmentSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
 
 class BookingOverviewAPIView(APIView):
     def get(self, request, *args, **kwargs):
@@ -324,11 +340,26 @@ class OrderCancellationView(APIView):
         try:
             order = Order.objects.get(id=orderId)
             if order.isPaid and order.status == 'Pending':
-                reimbursed_amount = order.order_amount - order.convenience_fee
+                order_amount_decimal = Decimal(order.order_amount)
+                reimbursed_amount = order_amount_decimal - order.convenience_fee
                 print('reimbursed_amount:', reimbursed_amount)
-                ReimbursedAmount.objects.create(user=order.user, order=order, amount=reimbursed_amount)
-                order.status = 'Cancelled'
-                order.save()
+                remaining_amount = order_amount_decimal - order.convenience_fee
+
+                with transaction.atomic():
+                    # Check if the user has a wallet
+                    wallet, created = Wallet.objects.get_or_create(user=order.user, defaults={'balance': Decimal('0.00')})
+
+
+                    # Update user's wallet balance
+                    wallet.balance += remaining_amount
+                    wallet.save()
+
+                    # Create a record for the reimbursed amount
+                    ReimbursedAmount.objects.create(user=order.user, order=order, amount=reimbursed_amount)
+
+                    # Update order status
+                    order.status = 'Cancelled'
+                    order.save()
                 return Response({'message': 'Order canceled successfully'}, status=status.HTTP_200_OK)
             else:
                 return Response({'error': 'Order cannot be cancelled'}, status=status.HTTP_400_BAD_REQUEST)
@@ -343,6 +374,22 @@ class ReimbursedAmountView(APIView):
             return Response({'reimbursed_amount': order.reimbursed_amount}, status=status.HTTP_200_OK)
         except Order.DoesNotExist:
             return Response({'error': 'Order not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class WalletBalanceView(APIView):
+    def get(self, request, *args, **kwargs):
+        user_id = self.kwargs.get('userId')
+        print('userId', user_id)
+        wallet = get_object_or_404(Wallet, user_id=user_id)
+
+        
+        response_data = {
+            'user_id': user_id,
+            'wallet_balance': float(wallet.balance),  # Convert Decimal to float for JSON serialization
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
         
 
 

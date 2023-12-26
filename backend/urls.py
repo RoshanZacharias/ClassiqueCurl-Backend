@@ -9,6 +9,7 @@ urlpatterns = [
     path('', include('booking.urls')),
     path('admin-side/', include('admin_side.urls')),
     path('salon-side/', include('salon.urls')),
+    path('chat/', include('chat.urls')),
     path('api-auth', include('rest_framework.urls')),
 ]
 

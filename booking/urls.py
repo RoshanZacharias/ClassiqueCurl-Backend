@@ -22,4 +22,5 @@ urlpatterns = [
     path('orders/reimbursed-sum/', ReimbursedSumView.as_view(), name='reimbursed-sum'),
     path('pay/<int:id>/', start_payment.as_view(), name="payment"),
     path('payment/success/', handle_payment_success.as_view(), name="payment_success"),
+    path('wallet/<int:userId>/', WalletBalanceView.as_view(), name='wallet-balance'),
 ]

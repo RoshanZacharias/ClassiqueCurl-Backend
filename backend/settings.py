@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'channels',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -45,7 +46,17 @@ INSTALLED_APPS = [
     'booking',
     'admin_side',
     'salon',
+    'chat',
 ]
+
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
+
 
 
 REST_FRAMEWORK = {
@@ -62,6 +73,7 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -93,7 +105,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
-ASGI_APPLICATION = "backend.asgi.application"
+ASGI_APPLICATION = 'backend.asgi.application'
+
 
 
 # Database
