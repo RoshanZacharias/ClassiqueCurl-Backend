@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import HairSalon, Service, Stylist, TimeSlot
-
+from booking.models import Notification
 
 
 class HairSalonRegistrationSerializer(serializers.ModelSerializer):
@@ -83,3 +83,26 @@ class TimeSlotSerializer(serializers.ModelSerializer):
 
         return super().create(validated_data)
         
+
+
+
+class SalonNotifySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = HairSalon
+        fields = ('id', 'salon_name', 'email')
+
+
+
+class SalonNotificationSerializer(serializers.ModelSerializer):
+    from_user = SalonNotifySerializer(read_only=True)
+
+    class Meta:
+        model = Notification
+        fields = '__all__'
+        read_only_fields = ('notification_type',)
+
+    def validate_notification_type(self, value):
+        choices = dict(Notification.NOTIFICATION_TYPES)
+        if value not in choices:
+            raise serializers.ValidationError("Invalid notification type.")
+        return value

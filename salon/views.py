@@ -1,10 +1,10 @@
 from django.shortcuts import render
 from .models import HairSalon, Service, Stylist
-from booking.models import Appointment, Order
+from booking.models import Appointment, Order, Notification
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .serializers import HairSalonRegistrationSerializer, ServiceSerializer, StylistSerializer, TimeSlotSerializer, TimeSlot
+from .serializers import HairSalonRegistrationSerializer, ServiceSerializer, StylistSerializer, TimeSlotSerializer, TimeSlot, SalonNotificationSerializer
 from booking.serializers import AppointmentSerializer, OrderSerializer
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
@@ -15,7 +15,7 @@ from django.conf import settings
 from django.middleware import csrf
 import time
 from django.http import JsonResponse
-from rest_framework import generics
+from rest_framework import generics, permissions
 
 # Create your views here.
 
@@ -28,9 +28,20 @@ class SalonRegistrationView(APIView):
         print(request.data)
         print(request.FILES)
         print("************************")
+        admin = CustomUser.objects.get(is_superuser=True)
+        print("ADMIN:", admin)
         serializer = HairSalonRegistrationSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            print("USER:", user)
+            salon_name = user.salon_name
+            Notification.objects.create(
+                salonUser=user,
+                customer=admin,
+               message=f'{salon_name} Requested to register. ',
+                notification_type=Notification.NOTIFICATION_TYPES[1][0],
+                sender_type=Notification.SENDER_TYPE[2][0]
+            )
             refresh = RefreshToken.for_user(user)
             tokens = {
                 'refresh': str(refresh),
@@ -247,3 +258,50 @@ class OrderStatusUpdateView(generics.UpdateAPIView):
         instance.status = new_status
         instance.save()
         return Response({'message': 'Order status updated successfully'})
+    
+
+
+class SalonProfileAPIView(APIView):
+    def get(self, request,salon_id):
+        try:
+            salon = HairSalon.objects.get(pk=salon_id)
+            print('SALON:', salon)
+            serializer = HairSalonRegistrationSerializer(salon)
+            print('serializer:', serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except HairSalon.DoesNotExist:
+            return Response({'detail:', 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+class SalonNotificationsView(generics.ListAPIView):
+    serializer_class = SalonNotificationSerializer
+
+    def get_queryset(self, pk):
+        user = HairSalon.objects.get(id=pk)
+        return Notification.objects.filter(salonUser=user, receiver_type='salonuser').exclude(is_seen=True).order_by('-created')
+
+    def get(self, request, pk, *args, **kwargs):
+        try:
+            queryset = self.get_queryset(pk)
+            notification_count = queryset.count()
+            serializer = self.get_serializer(queryset, many=True)
+            response_data = {
+                'notifications': serializer.data,
+                'notification_count': notification_count,
+            }
+            return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(str(e), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
+class UpdateNotificationSeenStatusView(generics.UpdateAPIView):
+    queryset = Notification.objects.all()
+    serializer_class = SalonNotificationSerializer
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.is_seen = True
+        instance.save()
+        return Response({'status': 'success', 'message': 'Notification seen status updated'}, status=status.HTTP_200_OK)

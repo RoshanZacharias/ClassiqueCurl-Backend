@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, Appointment, Order, Wallet
+from .models import CustomUser, Appointment, Order, Wallet, Notification
 from salon.models import Service, Stylist, TimeSlot
 from salon.serializers import ServiceSerializer, StylistSerializer, TimeSlotSerializer
 
@@ -7,7 +7,7 @@ from salon.serializers import ServiceSerializer, StylistSerializer, TimeSlotSeri
 class  UserRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('first_name', 'last_name', 'email', 'password', 'mobile')
+        fields = ('first_name', 'last_name', 'email', 'password', 'mobile', 'profile_picture')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):
@@ -93,3 +93,8 @@ class WalletSerializer(serializers.ModelSerializer):
     class Meta:
         model = Wallet
         fields = '__all__'
+
+
+
+
+

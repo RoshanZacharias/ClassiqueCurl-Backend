@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import AdminLoginView, SalonListView, UserListView, SalonDetailsView, UserBlockView, UserUnblockView
+from .views import AdminLoginView, SalonListView, UserListView, SalonDetailsView, UserBlockView, UserUnblockView, LatestPaidOrdersView
 
 
 
@@ -11,4 +11,5 @@ urlpatterns = [
     path('user-list/', UserListView.as_view(), name='user-list'),
     path('users/<int:user_id>/block/', UserBlockView.as_view(), name='user-block'),
     path('users/<int:user_id>/unblock/', UserUnblockView.as_view(), name='user-unblock'),
+    path('latest-paid-orders/', LatestPaidOrdersView.as_view(), name='latest-paid-orders'),
 ]

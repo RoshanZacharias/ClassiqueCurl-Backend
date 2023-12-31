@@ -9,7 +9,9 @@ from rest_framework.decorators import permission_classes
 from rest_framework.permissions import AllowAny
 from .serializers import AdminSerializer, HairSalonSerializer
 from salon.models import HairSalon
-from booking.models import CustomUser
+from booking.models import CustomUser, Order
+from booking.serializers import OrderSerializer
+from rest_framework import generics
 
 
 # Create your views here.
@@ -97,3 +99,11 @@ class UserUnblockView(APIView):
         user.save()
         serializer = AdminSerializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+class LatestPaidOrdersView(generics.ListAPIView):
+    serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        return Order.objects.filter(isPaid=True).order_by('-order_date')

@@ -32,6 +32,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=30)
     mobile = models.CharField(max_length=15, blank=True, null=True)
     password = models.CharField(max_length=20)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     is_blocked = models.BooleanField(default=False)
 
     # Add any additional fields you need
@@ -71,6 +72,7 @@ class Appointment(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.service} - {self.date}"
+        
     
 
 class Wallet(models.Model):
@@ -120,3 +122,37 @@ class ReimbursedAmount(models.Model):
 
     def __str__(self):
         return f"{self.user} - {self.order} - ₹{self.amount}"
+
+
+
+
+
+
+class Notification(models.Model):
+   NOTIFICATION_TYPES = [
+        ('booked', 'New Booked'),
+        ('pending', 'New Pending'),
+        ('completed', 'New Completed'),
+        ('cancelled', 'New Cancelled'),
+        
+    ]
+   
+   RECEIVER_TYPE = [
+       ('customuser','CUSTOMUSER'),
+       ('salonuser', 'SALONUSER'),
+   ]
+   
+   
+   
+   customer = models.ForeignKey(CustomUser, related_name="notification_to", on_delete=models.CASCADE, null=True)
+   salonUser = models.ForeignKey(HairSalon, related_name="notification_from", on_delete=models.CASCADE, null=True)
+   receiver_type = models.CharField(choices=RECEIVER_TYPE, max_length=20, null=True)
+   message = models.CharField(max_length=20, null=True)
+   notification_type = models.CharField(choices=NOTIFICATION_TYPES, max_length=20)
+   created = models.DateTimeField(auto_now_add=True)
+   is_seen = models.BooleanField(default=False)
+   
+   def _str_(self):
+        return f"{self.from_user} sent a {self.notification_type} notification to {self.to_user}"
+
+

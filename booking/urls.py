@@ -23,4 +23,6 @@ urlpatterns = [
     path('pay/<int:id>/', start_payment.as_view(), name="payment"),
     path('payment/success/', handle_payment_success.as_view(), name="payment_success"),
     path('wallet/<int:userId>/', WalletBalanceView.as_view(), name='wallet-balance'),
+    path('user/<int:user_id>/', UserProfileAPIView.as_view(), name='user-profile'),
+    path('user/<int:user_id>/upload-profile-picture/', UserProfilePictureUpload.as_view(), name='upload-profile-picture'),
 ]

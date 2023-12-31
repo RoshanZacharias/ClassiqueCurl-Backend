@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import generics, permissions, status
 # from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import CustomUser, Appointment, Order, ReimbursedAmount, Wallet
+from .models import CustomUser, Appointment, Order, ReimbursedAmount, Wallet, Notification
 from salon.models import HairSalon, Service, Stylist, TimeSlot
 from .serializers import UserRegistrationSerializer, GoogleUserSerializer, AppointmentSerializer, OrderSerializer, WalletSerializer
 from salon.serializers import HairSalonRegistrationSerializer, ServiceSerializer, StylistSerializer, TimeSlotSerializer
@@ -523,6 +523,11 @@ class handle_payment_success(APIView):
         order.isPaid = True
         order.save()
 
+        Notification.objects.create(
+            customer=order.user, salonUser=order.salon, message=f'{order.user_name} has booked an appointment.',
+            receiver_type=Notification.RECEIVER_TYPE[1][0],notification_type=Notification.NOTIFICATION_TYPES[0][0]
+            )
+
         res_data = {
             'message': 'payment successfully received!'
         }
@@ -587,3 +592,31 @@ class handle_payment_success(APIView):
 
 
 
+class UserProfileAPIView(APIView):
+    def get(self, request,user_id):
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+            serializer = UserRegistrationSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except CustomUser.DoesNotExist:
+            return Response({'detail:', 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+    
+
+class UserProfilePictureUpload(APIView):
+    def post(self, request, user_id):
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+            print('***USER***', user)
+
+            if 'profile_picture' in request.FILES:
+                user.profile_picture = request.FILES['profile_picture']
+                user.save()
+
+                serializer = UserRegistrationSerializer(user)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({"detail": "No profile picture provided"}, status=status.HTTP_400_BAD_REQUEST)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)

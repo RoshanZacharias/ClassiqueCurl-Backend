@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import SalonRegistrationView,SalonLoginView, SalonLogin, AddServiceView, SalonServicesView, AddStylistView, SalonStylistView, AddTimeSlotView, TimeSlotView, BookedAppointmentsView, OrderStatusUpdateView
+from .views import SalonRegistrationView,SalonLoginView, SalonLogin, AddServiceView, SalonServicesView, AddStylistView, SalonStylistView, AddTimeSlotView, TimeSlotView, BookedAppointmentsView, OrderStatusUpdateView, SalonProfileAPIView, SalonNotificationsView, UpdateNotificationSeenStatusView
 
 
 
@@ -14,6 +14,9 @@ urlpatterns = [
     path('salon-time-slot/', TimeSlotView.as_view(), name='time-slot'),
     path('booked-appointments/<int:salonId>/', BookedAppointmentsView.as_view(), name='booked-appointments'),
     path('order/update-status/<int:pk>/', OrderStatusUpdateView.as_view(), name='order-status-update'),
+    path('salon/<int:salon_id>/', SalonProfileAPIView.as_view(), name='salon-profile'),
+    path('salon-notification/<int:pk>/', SalonNotificationsView.as_view(), name='salon-notification'),
+    path('update-notification/<int:pk>/', UpdateNotificationSeenStatusView.as_view(), name='update-notification'),
 ]
     
 
