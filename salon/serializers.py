@@ -6,7 +6,7 @@ from booking.models import Notification
 class HairSalonRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = HairSalon
-        fields = ('id', 'salon_name', 'email', 'mobile', 'password', 'licence', 'licence_number', 'salon_image', 'location', 'is_verified')
+        fields = ('id', 'salon_name', 'email', 'mobile', 'password', 'licence', 'licence_number', 'profile_picture', 'salon_image', 'location', 'is_verified')
         extra_kwargs = {'password': {'write_only': True}}
 
     def create(self, validated_data):

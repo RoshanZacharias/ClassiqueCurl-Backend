@@ -10,9 +10,9 @@ from rest_framework.permissions import AllowAny
 from .serializers import AdminSerializer, HairSalonSerializer
 from salon.models import HairSalon
 from booking.models import CustomUser, Order
-from booking.serializers import OrderSerializer
+from booking.serializers import OrderSerializer, UserRegistrationSerializer
 from rest_framework import generics
-
+from django.db.models import Q
 
 # Create your views here.
 
@@ -69,7 +69,7 @@ class SalonDetailsView(APIView):
             salon.save()
         
         
-        # Return a response if needed
+        
         return Response({'message': 'Salon verified successfully'}, status=status.HTTP_200_OK)
     
 
@@ -77,7 +77,6 @@ class UserListView(APIView):
     def get(self, request, format=None):
         users = CustomUser.objects.all()
         serializer = AdminSerializer(users, many=True)
-        print(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
 
@@ -107,3 +106,34 @@ class LatestPaidOrdersView(generics.ListAPIView):
 
     def get_queryset(self):
         return Order.objects.filter(isPaid=True).order_by('-order_date')
+    
+
+
+class SalonListView(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            salons = HairSalon.objects.all()
+            serializer = HairSalonSerializer(salons, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+class UserSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        print('request:', request)
+        try:
+            search_term = request.query_params.get('search', '')
+            users = CustomUser.objects.filter(
+                Q(first_name__icontains=search_term) |
+                Q(last_name__icontains=search_term) |
+                Q(email__icontains=search_term)
+
+            )
+            print('USERS:', users)
+            serializer = UserRegistrationSerializer(users, many=True)
+            print("serializer serializer ", serializer)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

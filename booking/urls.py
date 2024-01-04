@@ -25,4 +25,5 @@ urlpatterns = [
     path('wallet/<int:userId>/', WalletBalanceView.as_view(), name='wallet-balance'),
     path('user/<int:user_id>/', UserProfileAPIView.as_view(), name='user-profile'),
     path('user/<int:user_id>/upload-profile-picture/', UserProfilePictureUpload.as_view(), name='upload-profile-picture'),
+    path('salons/search/', SalonSearchView.as_view(), name='user-search'),
 ]

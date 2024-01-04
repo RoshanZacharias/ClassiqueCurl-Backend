@@ -26,7 +26,7 @@ from datetime import datetime
 from decimal import Decimal
 from django.db import transaction 
 from rest_framework.generics import RetrieveAPIView
-
+from django.db.models import Q
 
 from .serializers import WalletSerializer
 
@@ -620,3 +620,23 @@ class UserProfilePictureUpload(APIView):
                 return Response({"detail": "No profile picture provided"}, status=status.HTTP_400_BAD_REQUEST)
         except CustomUser.DoesNotExist:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+
+
+class SalonSearchView(APIView):
+    def get(self, request, *args, **kwargs):
+        print('request:', request)
+        try:
+            search_term = request.query_params.get('search', '')
+            salons = HairSalon.objects.filter(
+                Q(salon_name__icontains=search_term) |
+                Q(email__icontains=search_term) |
+                Q(location__icontains=search_term)
+
+            )
+            print('SALONS:', salons)
+            serializer = HairSalonRegistrationSerializer(salons, many=True)
+            print("serializer serializer ", serializer)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

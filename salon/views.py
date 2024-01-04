@@ -305,3 +305,22 @@ class UpdateNotificationSeenStatusView(generics.UpdateAPIView):
         instance.is_seen = True
         instance.save()
         return Response({'status': 'success', 'message': 'Notification seen status updated'}, status=status.HTTP_200_OK)
+    
+
+
+class SalonProfilePictureUpload(APIView):
+    def post(self, request, salon_id):
+        try:
+            salon = HairSalon.objects.get(pk=salon_id)
+            print('***SALON***', salon)
+
+            if 'profile_picture' in request.FILES:
+                salon.profile_picture = request.FILES['profile_picture']
+                salon.save()
+
+                serializer = HairSalonRegistrationSerializer(salon)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({"detail": "No profile picture provided"}, status=status.HTTP_400_BAD_REQUEST)
+        except HairSalon.DoesNotExist:
+            return Response({"detail": "Salon not found"}, status=status.HTTP_404_NOT_FOUND)

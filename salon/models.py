@@ -31,6 +31,7 @@ class HairSalon(AbstractBaseUser, PermissionsMixin):
     location = models.CharField(max_length=255)
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
+    profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
 
     def __str__(self):
         return f'{self.salon_name},  id={self.id}'

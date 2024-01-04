@@ -1,6 +1,4 @@
 #consumers.py
-
-
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from .models import HairSalon
@@ -12,7 +10,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         salon = await self.get_salon_instance()
 
         if salon:
-            self.room_group_name = f"notify_{salon.id}"  # Use salon.id here
+            self.room_group_name = f"notify_{salon.id}" 
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
