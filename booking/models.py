@@ -31,7 +31,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=30)
     last_name = models.CharField(max_length=30)
     mobile = models.CharField(max_length=15, blank=True, null=True)
-    password = models.CharField(max_length=20)
+    password = models.CharField(max_length=128)
     profile_picture = models.ImageField(upload_to='profile_pictures/', blank=True, null=True)
     is_blocked = models.BooleanField(default=False)
 
