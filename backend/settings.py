@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'admin_side',
     'salon',
     'chat',
-    'whitenoise.runserver_nostatic',
+    
 ]
 
 
