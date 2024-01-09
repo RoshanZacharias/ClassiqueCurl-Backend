@@ -18,7 +18,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["classiquecurl.shop", "www.classiquecurl.shop"]
+ALLOWED_HOSTS = ["classiquecurl.shop", "www.classiquecurl.shop", "http://13.233.163.135/"]
 
 
 # Application definition
