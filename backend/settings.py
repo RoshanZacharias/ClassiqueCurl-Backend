@@ -60,6 +60,7 @@ REST_FRAMEWORK = {
 
 CORS_ALLOWED_ORIGINS = [
     "https://main.d17j3nb7783whn.amplifyapp.com/",
+    "https://www.classiquecurl.shop",
     
 ]
 
