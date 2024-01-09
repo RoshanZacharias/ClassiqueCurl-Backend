@@ -59,7 +59,7 @@ REST_FRAMEWORK = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
+    "https://main.d17j3nb7783whn.amplifyapp.com/",
     
 ]
 
