@@ -87,23 +87,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
-CSRF_TRUSTED_ORIGINS = ['https://www.classiquecurl.shop']
-CSRF_COOKIE_SECURE = True
 
-CORS_ALLOW_HEADERS = [
-    'Content-Type',
-    'Authorization',
-]
-
-# Allow all methods for simplicity, adjust as needed
-CORS_ALLOW_METHODS = [
-    'GET',
-    'POST',
-    'OPTIONS',
-    'PUT',
-    'PATCH',
-    'DELETE',
-]
 
 
 
