@@ -3,6 +3,8 @@
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from storages.backends.s3boto3 import S3Boto3Storage
+
 
 load_dotenv()
 
