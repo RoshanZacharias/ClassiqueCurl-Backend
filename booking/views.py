@@ -426,7 +426,7 @@ class start_payment(APIView):
         print("Razorpay Public Key:", env('PUBLIC_KEY'))
         print("Razorpay Secret Key:", env('SECRET_KEY'))
 
-        client = razorpay.Client(auth=(env('PUBLIC_KEY'), env('SECRET_KEY')))
+        client = razorpay.Client(auth=("rzp_test_ZQL2ChZEK9SL7A", "qiIPMJQP7dND0mDggXkRa3Xr"))
 
         payment = client.order.create({
         "amount": int(float(amount) * 100),  
