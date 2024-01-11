@@ -423,6 +423,8 @@ class start_payment(APIView):
         user = get_object_or_404(CustomUser, id=user_id)
         salon = get_object_or_404(HairSalon,id=salon_id)
 
+        print("Razorpay Public Key:", env('PUBLIC_KEY'))
+        print("Razorpay Secret Key:", env('SECRET_KEY'))
 
         client = razorpay.Client(auth=(env('PUBLIC_KEY'), env('SECRET_KEY')))
 
