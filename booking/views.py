@@ -481,6 +481,7 @@ class handle_payment_success(APIView):
         res = json.loads(request.data["response"])
         print('***res***', res)
 
+
         
 
         ord_id = ""
