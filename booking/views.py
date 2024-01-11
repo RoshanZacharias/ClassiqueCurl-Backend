@@ -510,7 +510,7 @@ class handle_payment_success(APIView):
             'razorpay_signature': raz_signature
         }
 
-        client = razorpay.Client(auth=(env('PUBLIC_KEY'), env('SECRET_KEY')))
+        client = razorpay.Client(auth=("rzp_test_ZQL2ChZEK9SL7A", "qiIPMJQP7dND0mDggXkRa3Xr"))
 
         # checking if the transaction is valid or not by passing above data dictionary in 
         # razorpay client if it is "valid" then check will return None
