@@ -198,7 +198,7 @@ class GoogleAuthLogin(APIView):
                         "user": {
                             "id": user.id,
                             "username": user.email,
-                            "name": user.get_full_name(),
+                            "name": user.first_name,
                         }
                     })
                     response.set_cookie(
@@ -226,8 +226,7 @@ class GoogleAuthLogin(APIView):
                             "user": {
                                 "id": user.id,
                                 "username": user.email,
-                                "name": user.get_full_name(),
-                                
+                                "name": user.first_name,
                             }
                         })
                         response.set_cookie(
