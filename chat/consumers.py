@@ -115,4 +115,4 @@ class ChatConsumer(AsyncWebsocketConsumer):
             salon = HairSalon.objects.get(id=salon_id)
             return salon
         except HairSalon.DoesNotExist:
-            print("Failed to find the doctor")
+            print("Failed to find the salon")
