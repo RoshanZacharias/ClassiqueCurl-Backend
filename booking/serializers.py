@@ -16,6 +16,8 @@ class  UserRegistrationSerializer(serializers.ModelSerializer):
     
 
 class GoogleUserSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source='get_full_name', read_only=True)
+    
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'email']
