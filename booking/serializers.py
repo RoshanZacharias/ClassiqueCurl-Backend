@@ -16,12 +16,14 @@ class  UserRegistrationSerializer(serializers.ModelSerializer):
     
 
 class GoogleUserSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source='get_full_name', read_only=True)
-    
+    name = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
         fields = ['id', 'name', 'email']
 
+    def get_name(self, obj):
+        return obj.get_full_name()
     
     def create(self, validated_data):
         email = validated_data.pop('email')
