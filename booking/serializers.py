@@ -20,7 +20,7 @@ class GoogleUserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['id', 'name', 'email']
+        fields = ['id', 'first_name','last_name', 'email']
 
     
     
