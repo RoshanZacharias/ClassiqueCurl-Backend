@@ -95,7 +95,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_ALL_ORIGINS = True
 
 
-
+CSRF_TRUSTED_ORIGINS = ['https://www.classiquecurl.shop', 'https://classiquecurl.shop']
 
 
 ROOT_URLCONF = 'backend.urls'
