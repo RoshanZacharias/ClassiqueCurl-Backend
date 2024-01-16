@@ -34,14 +34,14 @@ class SalonRegistrationView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             print("USER:", user)
-            salon_name = user.salon_name
-            Notification.objects.create(
-                salonUser=user,
-                customer=admin,
-               message=f'{salon_name} Requested to register. ',
-                notification_type=Notification.NOTIFICATION_TYPES[1][0],
-                sender_type=Notification.SENDER_TYPE[2][0]
-            )
+            # salon_name = user.salon_name
+            # Notification.objects.create(
+            #     salonUser=user,
+            #     customer=admin,
+            #    message=f'{salon_name} Requested to register. ',
+            #     notification_type=Notification.NOTIFICATION_TYPES[1][0],
+            #     sender_type=Notification.SENDER_TYPE[2][0]
+            # )
             refresh = RefreshToken.for_user(user)
             tokens = {
                 'refresh': str(refresh),
