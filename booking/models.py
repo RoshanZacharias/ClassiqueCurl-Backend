@@ -148,9 +148,9 @@ class Notification(models.Model):
    
    customer = models.ForeignKey(CustomUser, related_name="notification_to", on_delete=models.CASCADE, null=True)
    salonUser = models.ForeignKey(HairSalon, related_name="notification_from", on_delete=models.CASCADE, null=True)
-   receiver_type = models.CharField(choices=RECEIVER_TYPE, max_length=20, null=True)
-   message = models.CharField(max_length=20, null=True)
-   notification_type = models.CharField(choices=NOTIFICATION_TYPES, max_length=20)
+   receiver_type = models.CharField(choices=RECEIVER_TYPE, max_length=30, null=True)
+   message = models.CharField(max_length=250, null=True)
+   notification_type = models.CharField(choices=NOTIFICATION_TYPES, max_length=50)
    created = models.DateTimeField(auto_now_add=True)
    is_seen = models.BooleanField(default=False)
    
