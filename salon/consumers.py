@@ -45,7 +45,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         data = json.loads(event.get('value'))
         await self.send(text_data=json.dumps({
                 'type' : 'notification',
-                'payload': data
+                'payload': data,
             }))
         
     async def logout_user(self, event):
